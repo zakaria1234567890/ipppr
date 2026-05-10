@@ -83,7 +83,7 @@ router.post('/', validateInscription, async (req, res) => {
 
     // Write to CSV with injection-safe sanitization
     const date = new Date().toLocaleString('fr-FR');
-    const row = `"${sanitizeCsv(nom)}","${sanitizeCsv(dateNaissance)}","${sanitizeCsv(telephone)}","${sanitizeCsv(email)}","${sanitizeCsv(niveauScolaire)}","${sanitizeCsv(filiere)}","${date}"\n`;
+    const row = `"${sanitizeCsv(nom)}","${sanitizeCsv(formattedDate)}","${sanitizeCsv(telephone)}","${sanitizeCsv(email)}","${sanitizeCsv(niveauScolaire)}","${sanitizeCsv(filiere)}","${date}"\n`;
 
     try {
         if (!fs.existsSync(CSV_PATH)) {
