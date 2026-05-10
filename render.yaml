@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: ipppr-api
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: SPREADSHEET_ID
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: EMAIL_TO
+        sync: false
