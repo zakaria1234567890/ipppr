@@ -79,6 +79,7 @@ router.post('/', validateInscription, async (req, res) => {
     }
 
     const { source, nom, dateNaissance, telephone, email, niveauScolaire, filiere } = req.body;
+    const formattedDate = dateNaissance ? new Date(formattedDate).toISOString().split('T')[0] : '';
 
     // Write to CSV with injection-safe sanitization
     const date = new Date().toLocaleString('fr-FR');
@@ -93,7 +94,7 @@ router.post('/', validateInscription, async (req, res) => {
         console.error('[CSV] Write error:', err.message);
     }
 
-    await sendToSheets({ nom, dateNaissance, telephone, email, niveauScolaire, filiere }, source);
+    await sendToSheets({ nom, dateNaissance: formattedDate, telephone, email, niveauScolaire, filiere }, source);
 
     res.json({ success: true });
 });
