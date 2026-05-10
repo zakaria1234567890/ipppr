@@ -79,7 +79,7 @@ router.post('/', validateInscription, async (req, res) => {
     }
 
     const { source, nom, dateNaissance, telephone, email, niveauScolaire, filiere } = req.body;
-    const formattedDate = dateNaissance ? new Date(formattedDate).toISOString().split('T')[0] : '';
+    const formattedDate = dateNaissance ? new Date(dateNaissance).toISOString().split('T')[0] : '';
 
     // Write to CSV with injection-safe sanitization
     const date = new Date().toLocaleString('fr-FR');
