@@ -8,7 +8,9 @@ const { google } = require('googleapis');
 const router = express.Router();
 
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID || '19v_SYfOZF19NrxOoLZQbC5e8tDy5TN10v6jZGj0YJ98';
-const CREDENTIALS_PATH = path.join(__dirname, '..', 'credentials.json');
+const CREDENTIALS_PATH = fs.existsSync('/etc/secrets/credentials.json')
+    ? '/etc/secrets/credentials.json'
+    : path.join(__dirname, '..', 'credentials.json');
 
 // Escape HTML to prevent XSS in emails
 function escapeHtml(str) {
