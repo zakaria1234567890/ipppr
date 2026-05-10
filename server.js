@@ -10,15 +10,17 @@ const inscriptionRouter = require('./routes/inscription');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
 app.set('trust proxy', 1);
 
 // Security headers
 app.use(helmet());
 
-// CORS — allow configured origins or localhost in dev
 // CORS — always allow Netlify domain + any extra origins from env
 const allowedOrigins = [
     'https://ipppr.netlify.app',
+    'https://institut3plarose.com',
+    'http://institut3plarose.com',
     'http://localhost:5173',
     'http://localhost:3000',
     ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : []),
@@ -31,7 +33,6 @@ app.use(cors({
     },
     credentials: true,
 }));
-
 
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
