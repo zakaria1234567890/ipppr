@@ -10,6 +10,7 @@ const inscriptionRouter = require('./routes/inscription');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+app.set('trust proxy', 1);
 
 // Security headers
 app.use(helmet());
