@@ -8,25 +8,39 @@ const router = express.Router();
 
 const CSV_PATH = path.join(__dirname, '..', 'data', 'inscriptions.csv');
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID || '19v_SYfOZF19NrxOoLZQbC5e8tDy5TN10v6jZGj0YJ98';
-const CREDENTIALS_PATH = fs.existsSync('/etc/secrets/credentials.json')
-    ? '/etc/secrets/credentials.json'
-    : path.join(__dirname, '..', 'credentials.json');
 
-
+// Sanitize a value to prevent CSV injection
 function sanitizeCsv(value) {
     if (!value) return '';
     const str = String(value).trim();
-    if (['=', '+', '-', '@', '\t', '\r'].some(c => str.startsWith(c))) return `\t${str}`;
+    if (['=', '+', '-', '@', '\t', '\r'].some(c => str.startsWith(c))) {
+        return `\t${str}`;
+    }
     return str.replace(/"/g, '""');
 }
 
+function getCredentials() {
+    if (process.env.GOOGLE_CREDENTIALS) {
+        return JSON.parse(process.env.GOOGLE_CREDENTIALS);
+    }
+    const localPath = path.join(__dirname, '..', 'credentials.json');
+    if (fs.existsSync(localPath)) {
+        return JSON.parse(fs.readFileSync(localPath, 'utf8'));
+    }
+    return null;
+}
+
 async function sendToSheets(data, source) {
-    if (!fs.existsSync(CREDENTIALS_PATH)) return;
+    const credentials = getCredentials();
+    if (!credentials) return;
     try {
-        const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, 'utf8'));
-        const auth = new google.auth.GoogleAuth({ credentials, scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
+        const auth = new google.auth.GoogleAuth({
+            credentials,
+            scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+        });
         const sheets = google.sheets({ version: 'v4', auth });
         const date = new Date().toLocaleString('fr-FR');
+
         if (source === 'formation') {
             await sheets.spreadsheets.values.append({
                 spreadsheetId: SPREADSHEET_ID,
@@ -47,6 +61,7 @@ async function sendToSheets(data, source) {
     }
 }
 
+// Validation rules
 const validateInscription = [
     body('nom').trim().notEmpty().isLength({ max: 100 }).escape(),
     body('telephone').trim().notEmpty().matches(/^[0-9+\s\-()]{7,20}$/),
@@ -62,18 +77,24 @@ router.post('/', validateInscription, async (req, res) => {
     if (!errors.isEmpty()) {
         return res.status(400).json({ success: false, errors: errors.array() });
     }
+
     const { source, nom, dateNaissance, telephone, email, niveauScolaire, filiere } = req.body;
+
+    // Write to CSV with injection-safe sanitization
     const date = new Date().toLocaleString('fr-FR');
     const row = `"${sanitizeCsv(nom)}","${sanitizeCsv(dateNaissance)}","${sanitizeCsv(telephone)}","${sanitizeCsv(email)}","${sanitizeCsv(niveauScolaire)}","${sanitizeCsv(filiere)}","${date}"\n`;
+
     try {
         if (!fs.existsSync(CSV_PATH)) {
-            fs.writeFileSync(CSV_PATH, 'Nom-Complet,Date-de-Naissance,Telephone,Email,Niveau-Scolaire,Filiere,Date-Candidature\n', 'utf8');
+            fs.writeFileSync(CSV_PATH, 'Nom-Complet,Date-de-Naissance,Téléphone,Email,Niveau-Scolaire,Filière,Date-Candidature\n', 'utf8');
         }
         fs.appendFileSync(CSV_PATH, row, 'utf8');
     } catch (err) {
         console.error('[CSV] Write error:', err.message);
     }
+
     await sendToSheets({ nom, dateNaissance, telephone, email, niveauScolaire, filiere }, source);
+
     res.json({ success: true });
 });
 
