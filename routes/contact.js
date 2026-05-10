@@ -8,9 +8,17 @@ const { google } = require('googleapis');
 const router = express.Router();
 
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID || '19v_SYfOZF19NrxOoLZQbC5e8tDy5TN10v6jZGj0YJ98';
-const CREDENTIALS_PATH = fs.existsSync('/etc/secrets/credentials.json')
-    ? '/etc/secrets/credentials.json'
-    : path.join(__dirname, '..', 'credentials.json');
+
+function getCredentials() {
+    if (process.env.GOOGLE_CREDENTIALS) {
+        return JSON.parse(process.env.GOOGLE_CREDENTIALS);
+    }
+    const localPath = path.join(__dirname, '..', 'credentials.json');
+    if (fs.existsSync(localPath)) {
+        return JSON.parse(fs.readFileSync(localPath, 'utf8'));
+    }
+    return null;
+}
 
 // Escape HTML to prevent XSS in emails
 function escapeHtml(str) {
@@ -24,9 +32,9 @@ function escapeHtml(str) {
 }
 
 async function sendToSheets(data) {
-    if (!fs.existsSync(CREDENTIALS_PATH)) return;
+    const credentials = getCredentials();
+    if (!credentials) return;
     try {
-        const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, 'utf8'));
         const auth = new google.auth.GoogleAuth({ credentials, scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
         const sheets = google.sheets({ version: 'v4', auth });
         const date = new Date().toLocaleString('fr-FR');
